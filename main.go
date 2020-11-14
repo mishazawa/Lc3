@@ -2,16 +2,20 @@ package main
 
 import (
   "log"
-  "github.com/mishazawa/Lc3/registers"
+  reg "github.com/mishazawa/Lc3/registers"
+  mem "github.com/mishazawa/Lc3/memory"
   _ "github.com/mishazawa/Lc3/opcodes"
   _ "github.com/mishazawa/Lc3/cond"
 )
 
 
-var mem []uint16 = make([]uint16, ^uint16(0))
-var reg []uint16 = make([]uint16, registers.COUNT)
-
 func main () {
+  //
+  registers := reg.New()
+  memory    := mem.New()
+  // defaults
+  registers.Write(reg.PC, 0x3000)
+
   /*
       1. Load one instruction from memory at the address of the PC register.
       2. Increment the PC register.
@@ -22,6 +26,12 @@ func main () {
 
   // load
 
-  log.Println("Mem: ", len(memory))
-  log.Println("Registers: ", len(reg))
+  running := true
+
+  for {
+    if (!running) { break }
+    instruction := memory.Read(registers.Inc(reg.PC))
+    log.Println(instruction >> 12)
+    running = false
+  }
 }
