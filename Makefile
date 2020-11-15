@@ -6,3 +6,6 @@ build:
 
 run:
 	go run .
+
+exec:
+	go run . -exec=data/hello_world.obj

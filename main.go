@@ -2,15 +2,18 @@ package main
 
 import (
   "os"
+  "io"
+  "flag"
   "bufio"
   "fmt"
   "regexp"
+  "encoding/binary"
+
   reg "github.com/mishazawa/Lc3/registers"
   mem "github.com/mishazawa/Lc3/memory"
   _ "github.com/mishazawa/Lc3/opcodes"
   _ "github.com/mishazawa/Lc3/cond"
 )
-
 
 func main () {
   registers, memory := initialize()
@@ -23,7 +26,11 @@ func main () {
       5. Go back to step 1.
   */
 
-  load()
+  err := load(memory, registers)
+
+  if err != nil {
+    panic(err)
+  }
 
   running := true
 
@@ -39,8 +46,6 @@ func main () {
 func initialize () (*reg.Reg, *mem.Memory) {
   registers := reg.New()
   memory    := mem.New()
-  // defaults
-  registers.Write(reg.PC, 0x3000)
   return registers, memory
 }
 
@@ -50,9 +55,23 @@ var HELP_MESSAGE string = `
 `
 
 
-func load () {
-  COMMAND := regexp.MustCompile(`(load|help)\s?(.*)?$`)
+func load (memory *mem.Memory, registers *reg.Reg) error {
+  var err error
+  var mess string
 
+  file := flag.String("exec", "", "Path to asm file")
+  flag.Parse()
+
+  if len(*file) != 0 {
+    err, mess = loadFile(*file, memory, registers)
+    if len(mess) != 0 {
+      fmt.Println(mess)
+      return nil
+    }
+    return err
+  }
+
+  COMMAND := regexp.MustCompile(`(load|help)\s?(.*)?$`)
   scanner := bufio.NewScanner(os.Stdin)
 
   load_loop:
@@ -68,21 +87,77 @@ func load () {
     case "help":
       fmt.Println(HELP_MESSAGE)
     case "load":
-      if len(groups[2]) == 0 {
-        fmt.Println("[Error] Enter path to file.")
-        continue load_loop
-      }
-
-      info, err := os.Stat(groups[2])
-
-      if os.IsNotExist(err) {
-        fmt.Println("[Error] File doesn't exist.")
-      } else if info.IsDir() {
-        fmt.Printf("[Error] %s is directory.\n", groups[2])
+      err, mess = loadFile(groups[2], memory, registers)
+      if len(mess) != 0 {
+        fmt.Println(mess)
       } else {
-        fmt.Printf("[Reading] %s\n", groups[2])
         break load_loop
       }
     }
+  }
+
+  return err
+}
+
+
+func readImageToMemory (filename string, memory *mem.Memory, registers *reg.Reg) error {
+  file, err := os.Open(filename)
+
+  if err != nil {
+    return err
+  }
+
+  defer file.Close()
+
+  /*
+    1. read origin 2 bytes
+    2. put it to PC register
+    3. load rest of instructions to memory from origin point
+  */
+
+  origin := make([]byte, 2)
+
+  _, err = file.Read(origin)
+
+  if err != nil {
+    return err
+  }
+  registers.Write(reg.PC, binary.BigEndian.Uint16(origin))
+
+  pointer := registers.Read(reg.PC)
+
+  for {
+    data := make([]byte, 2)
+    _, err := file.Read(data)
+
+    if err == io.EOF {
+      return nil
+    }
+
+    if err != nil {
+      return err
+    }
+
+    memory.Write(pointer, binary.BigEndian.Uint16(data))
+    pointer += 1
+  }
+
+  return nil
+}
+
+func loadFile (path string, memory *mem.Memory, registers *reg.Reg) (error, string) {
+  if len(path) == 0 {
+    return nil, "[Error] Enter path to file."
+  }
+
+  info, err := os.Stat(path)
+
+  if os.IsNotExist(err) {
+    return nil, "[Error] File doesn't exist."
+  } else if info.IsDir() {
+    return nil, fmt.Sprintf("[Error] %s is directory.", path)
+  } else {
+    err := readImageToMemory(path, memory, registers)
+    return err, ""
   }
 }
