@@ -11,8 +11,7 @@ import (
 
   reg "github.com/mishazawa/Lc3/registers"
   mem "github.com/mishazawa/Lc3/memory"
-  _ "github.com/mishazawa/Lc3/opcodes"
-  _ "github.com/mishazawa/Lc3/cond"
+  op "github.com/mishazawa/Lc3/opcodes"
 )
 
 func main () {
@@ -37,8 +36,13 @@ func main () {
   for {
     if (!running) { break }
     instruction := memory.Read(registers.Inc(reg.PC))
-    fmt.Println(instruction >> 12)
-    running = false
+    switch instruction >> 12 {
+    case op.ADD:
+      fmt.Printf("ADD\n")
+    default:
+      fmt.Printf("Unknown %b\n", instruction >> 12)
+      running = false
+    }
   }
 }
 

@@ -1,6 +1,5 @@
 package memory
 
-
 type Memory struct {
 	layout []uint16
 }
