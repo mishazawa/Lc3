@@ -37,12 +37,15 @@ func main () {
     if (!running) { break }
     instruction := memory.Read(registers.Inc(reg.PC))
     switch instruction >> 12 {
-    case op.ADD:
-      fmt.Printf("ADD\n")
-      op.Add(instruction, registers)
     case op.LDI:
       op.LoadIndirect(instruction, registers, memory)
       fmt.Printf("LDI\n")
+    case op.ADD:
+      fmt.Printf("ADD\n")
+      op.Add(instruction, registers)
+    case op.AND:
+      fmt.Printf("AND\n")
+      op.And(instruction, registers)
     case op.TRAP:
       fmt.Printf("TRAP %b\n", instruction >> 12)
       running = false
