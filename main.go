@@ -46,6 +46,9 @@ func main () {
     case op.AND:
       fmt.Printf("AND\n")
       op.And(instruction, registers)
+    case op.BR:
+      fmt.Printf("BR\n")
+      op.Branch(instruction, registers, memory)
     case op.TRAP:
       fmt.Printf("TRAP %b\n", instruction >> 12)
       running = false

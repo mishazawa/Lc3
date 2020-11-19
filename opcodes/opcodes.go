@@ -106,5 +106,9 @@ func And (instruction uint16, registers *reg.Reg) {
 
 
 func Branch (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
-  // TBE
+  nzp := (instruction >> 9) & 0x7
+  if (nzp & 0x4) == 1 || (nzp & 0x2) == 1 || (nzp & 0x1) == 1 {
+    offset := sign_extend(instruction & 0x1ff, 9)
+    registers.Write(reg.PC, registers.Read(reg.PC) + offset)
+  }
 }
