@@ -37,9 +37,18 @@ func main () {
     if (!running) { break }
     instruction := memory.Read(registers.Inc(reg.PC))
     switch instruction >> 12 {
+    case op.LD:
+      fmt.Printf("LD\n")
+      op.Load(instruction, registers, memory)
     case op.LDI:
-      op.LoadIndirect(instruction, registers, memory)
       fmt.Printf("LDI\n")
+      op.LoadIndirect(instruction, registers, memory)
+    case op.LDR:
+      fmt.Printf("LDR\n")
+      op.LoadRegister(instruction, registers, memory)
+    case op.LEA:
+      fmt.Printf("LEA\n")
+      op.LoadEffectiveAddress(instruction, registers)
     case op.ADD:
       fmt.Printf("ADD\n")
       op.Add(instruction, registers)
@@ -49,6 +58,12 @@ func main () {
     case op.BR:
       fmt.Printf("BR\n")
       op.Branch(instruction, registers, memory)
+    case op.JMP:
+      fmt.Printf("JMP\n")
+      op.Jump(instruction, registers)
+    case op.JSR:
+      fmt.Printf("JSR\n")
+      op.JumpRegister(instruction, registers)
     case op.TRAP:
       fmt.Printf("TRAP %b\n", instruction >> 12)
       running = false

@@ -33,26 +33,6 @@ func sign_extend (x uint16, bits int) uint16 {
 }
 
 /*
-  Load value from memory to register. Decode memory address that
-  store memory address to actual value.
-*/
-func LoadIndirect (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
-  destination := (instruction >> 9) & 0x7
-  offset      := sign_extend(instruction & 0x1ff, 9)
-
-  /*
-    Value of PC register + encoded offset [9 bit] points to memory
-    location in near segment of memory (max memory address = 16 bit)
-    that point to another memory location (0 - 16 bit).
-  */
-
-  val := memory.Read(memory.Read(registers.Read(reg.PC) + offset))
-
-  registers.Write(destination, val)
-  registers.UpdateFlags(destination)
-}
-
-/*
   Add values.
 
   Add Register:
@@ -104,11 +84,84 @@ func And (instruction uint16, registers *reg.Reg) {
   registers.UpdateFlags(destination)
 }
 
+/*
+  Branch according to states of flags instruction[9:11].
 
+  if neg | zero | positive then
+    PC += instruction[0:8]
+*/
 func Branch (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
   nzp := (instruction >> 9) & 0x7
   if (nzp & 0x4) == 1 || (nzp & 0x2) == 1 || (nzp & 0x1) == 1 {
     offset := sign_extend(instruction & 0x1ff, 9)
     registers.Write(reg.PC, registers.Read(reg.PC) + offset)
   }
+}
+
+/*
+  Jump or return.
+
+  PC <- instruction[9:11]
+*/
+func Jump (instruction uint16, registers *reg.Reg) {
+  registers.Write(reg.PC, registers.Read((instruction >> 6) & 0x7))
+}
+
+
+func JumpRegister (instruction uint16, registers *reg.Reg) {
+  mode := (instruction >> 11) & 1
+
+  if mode == 1 {
+    value := (instruction >> 6) & 0x7
+    registers.Write(reg.PC, value)
+  } else {
+    offset := sign_extend(instruction & 0x7ff, 11)
+    registers.Write(reg.PC, registers.Read(reg.PC) + offset)
+  }
+
+}
+
+func Load (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
+  destination := (instruction >> 9) & 0x7
+  offset      := sign_extend(instruction & 0x1ff, 9)
+
+  registers.Write(destination, memory.Read(registers.Read(reg.PC + offset)))
+  registers.UpdateFlags(destination)
+}
+
+/*
+  Load value from memory to register. Decode memory address that
+  store memory address to actual value.
+*/
+func LoadIndirect (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
+  destination := (instruction >> 9) & 0x7
+  offset      := sign_extend(instruction & 0x1ff, 9)
+
+  /*
+    Value of PC register + encoded offset [9 bit] points to memory
+    location in near segment of memory (max memory address = 16 bit)
+    that point to another memory location (0 - 16 bit).
+  */
+
+  val := memory.Read(memory.Read(registers.Read(reg.PC) + offset))
+
+  registers.Write(destination, val)
+  registers.UpdateFlags(destination)
+}
+
+func LoadRegister (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
+  destination := (instruction >> 9) & 0x7
+  base        := (instruction >> 6) & 0x7
+  offset      := sign_extend(instruction & 0x2f, 6)
+
+  registers.Write(destination, memory.Read(base + offset))
+  registers.UpdateFlags(destination)
+}
+
+func LoadEffectiveAddress (instruction uint16, registers *reg.Reg) {
+  destination := (instruction >> 9) & 0x7
+  offset      := sign_extend(instruction & 0x1ff, 9)
+
+  registers.Write(destination, registers.Read(reg.PC) + offset)
+  registers.UpdateFlags(destination)
 }
