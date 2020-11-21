@@ -1,6 +1,7 @@
 package opcodes
 
 import (
+  "fmt"
   reg "github.com/mishazawa/Lc3/registers"
   mem "github.com/mishazawa/Lc3/memory"
 )
@@ -22,6 +23,14 @@ const (
   RES       /* reserved (unused) */
   LEA       /* load effective address */
   TRAP      /* execute trap */
+
+  /* traps */
+  GETC  = 0x20 /* get character from keyboard, not echoed onto the terminal */
+  OUT   = 0x21 /* output a character */
+  PUTS  = 0x22 /* output a word string */
+  IN    = 0x23 /* get character from keyboard, echoed onto the terminal */
+  PUTSP = 0x24 /* output a byte string */
+  HALT  = 0x25 /* halt the program */
 )
 
 func sign_extend (x uint16, bits int) uint16 {
@@ -92,9 +101,11 @@ func And (instruction uint16, registers *reg.Reg) {
 */
 func Branch (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
   nzp := (instruction >> 9) & 0x7
+  fmt.Println(registers.Read(reg.PC))
   if (nzp & 0x4) == 1 || (nzp & 0x2) == 1 || (nzp & 0x1) == 1 {
     offset := sign_extend(instruction & 0x1ff, 9)
     registers.Write(reg.PC, registers.Read(reg.PC) + offset)
+    fmt.Println(registers.Read(reg.PC))
   }
 }
 
@@ -106,7 +117,6 @@ func Branch (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
 func Jump (instruction uint16, registers *reg.Reg) {
   registers.Write(reg.PC, registers.Read((instruction >> 6) & 0x7))
 }
-
 
 func JumpRegister (instruction uint16, registers *reg.Reg) {
   mode := (instruction >> 11) & 1
@@ -125,7 +135,7 @@ func Load (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
   destination := (instruction >> 9) & 0x7
   offset      := sign_extend(instruction & 0x1ff, 9)
 
-  registers.Write(destination, memory.Read(registers.Read(reg.PC + offset)))
+  registers.Write(destination, memory.Read(registers.Read(reg.PC) + offset))
   registers.UpdateFlags(destination)
 }
 
@@ -164,4 +174,53 @@ func LoadEffectiveAddress (instruction uint16, registers *reg.Reg) {
 
   registers.Write(destination, registers.Read(reg.PC) + offset)
   registers.UpdateFlags(destination)
+}
+
+func Not (instruction uint16, registers *reg.Reg) {
+  destination := (instruction >> 9) & 0x7
+  source      := (instruction >> 6) & 0x7
+  registers.Write(destination, ^registers.Read(source))
+  registers.UpdateFlags(destination)
+}
+
+func Store (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
+  source := (instruction >> 9) & 0x7
+  offset := sign_extend(instruction & 0x1ff, 9)
+  memory.Write(registers.Read(reg.PC) + offset, registers.Read(source))
+}
+
+func StoreIndirect (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
+  source := (instruction >> 9) & 0x7
+  offset := sign_extend(instruction & 0x1ff, 9)
+  memory.Write(memory.Read(registers.Read(reg.PC) + offset),  registers.Read(source))
+}
+
+func StoreRegister (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
+  source := (instruction >> 9) & 0x7
+  base   := (instruction >> 6) & 0x7
+  offset := sign_extend(instruction & 0x2f, 6)
+  memory.Write(memory.Read(registers.Read(base) + offset),  registers.Read(source))
+}
+
+func Trap (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
+  switch instruction & 0xff {
+  case GETC:
+    fmt.Printf("Getc\n")
+  case OUT:
+    fmt.Printf("Out\n")
+  case PUTS:
+    fmt.Printf("Puts\n")
+    puts(registers, memory)
+  case IN:
+    fmt.Printf("In\n")
+  case PUTSP:
+    fmt.Printf("Putsp\n")
+  case HALT:
+    fmt.Printf("Halt\n")
+  }
+}
+
+func puts (registers *reg.Reg, memory *mem.Memory) {
+  val := memory.Read(registers.Read(reg.R0))
+  fmt.Println(val)
 }

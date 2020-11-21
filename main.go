@@ -36,7 +36,8 @@ func main () {
   for {
     if (!running) { break }
     instruction := memory.Read(registers.Inc(reg.PC))
-    switch instruction >> 12 {
+    fmt.Println(instruction >> 0xfff)
+    switch instruction >> 0xfff {
     case op.LD:
       fmt.Printf("LD\n")
       op.Load(instruction, registers, memory)
@@ -55,18 +56,29 @@ func main () {
     case op.AND:
       fmt.Printf("AND\n")
       op.And(instruction, registers)
+    case op.NOT:
+      fmt.Printf("Not\n")
+      op.Not(instruction, registers)
     case op.BR:
-      fmt.Printf("BR\n")
-      op.Branch(instruction, registers, memory)
+      running = false
+      // fmt.Printf("BR\n")
+      // op.Branch(instruction, registers, memory)
     case op.JMP:
       fmt.Printf("JMP\n")
       op.Jump(instruction, registers)
     case op.JSR:
       fmt.Printf("JSR\n")
       op.JumpRegister(instruction, registers)
+    case op.ST:
+      fmt.Printf("ST\n")
+      op.Store(instruction, registers, memory)
     case op.TRAP:
       fmt.Printf("TRAP %b\n", instruction >> 12)
-      running = false
+      op.Trap(instruction, registers, memory)
+    case op.RTI:
+      panic("RTI not implemented.")
+    case op.RES:
+      panic("RES not implemented.")
     default:
       fmt.Printf("Unknown %b\n", instruction >> 12)
       running = false
@@ -154,7 +166,7 @@ func readImageToMemory (filename string, memory *mem.Memory, registers *reg.Reg)
   if err != nil {
     return err
   }
-  registers.Write(reg.PC, binary.BigEndian.Uint16(origin))
+  registers.Write(reg.PC, swap16(binary.BigEndian.Uint16(origin)))
 
   pointer := registers.Read(reg.PC)
 
@@ -170,11 +182,15 @@ func readImageToMemory (filename string, memory *mem.Memory, registers *reg.Reg)
       return err
     }
 
-    memory.Write(pointer, binary.BigEndian.Uint16(data))
+    memory.Write(pointer, swap16(binary.BigEndian.Uint16(data)))
     pointer += 1
   }
 
   return nil
+}
+
+func swap16(x uint16) uint16 {
+  return (x << 8) | (x >> 8)
 }
 
 func loadFile (path string, memory *mem.Memory, registers *reg.Reg) (error, string) {
