@@ -2,6 +2,7 @@ package opcodes
 
 import (
   "fmt"
+
   reg "github.com/mishazawa/Lc3/registers"
   mem "github.com/mishazawa/Lc3/memory"
 )
@@ -101,7 +102,6 @@ func And (instruction uint16, registers *reg.Reg) {
 */
 func Branch (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
   nzp := (instruction >> 9) & 0x7
-  fmt.Println(registers.Read(reg.PC))
   if (nzp & 0x4) == 1 || (nzp & 0x2) == 1 || (nzp & 0x1) == 1 {
     offset := sign_extend(instruction & 0x1ff, 9)
     registers.Write(reg.PC, registers.Read(reg.PC) + offset)
@@ -202,14 +202,13 @@ func StoreRegister (instruction uint16, registers *reg.Reg, memory *mem.Memory) 
   memory.Write(memory.Read(registers.Read(base) + offset),  registers.Read(source))
 }
 
-func Trap (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
+func Trap (instruction uint16, registers *reg.Reg, memory *mem.Memory) bool {
   switch instruction & 0xff {
   case GETC:
     fmt.Printf("Getc\n")
   case OUT:
     fmt.Printf("Out\n")
   case PUTS:
-    fmt.Printf("Puts\n")
     puts(registers, memory)
   case IN:
     fmt.Printf("In\n")
@@ -217,10 +216,20 @@ func Trap (instruction uint16, registers *reg.Reg, memory *mem.Memory) {
     fmt.Printf("Putsp\n")
   case HALT:
     fmt.Printf("Halt\n")
+    return false
   }
+  return true
 }
 
 func puts (registers *reg.Reg, memory *mem.Memory) {
-  val := memory.Read(registers.Read(reg.R0))
-  fmt.Println(val)
+  pointer := registers.Read(reg.R0)
+  for {
+    val := memory.Read(pointer)
+    fmt.Print(string(val))
+    if val == 0 {
+      fmt.Printf("\n")
+      break
+    }
+    pointer += 1
+  }
 }
