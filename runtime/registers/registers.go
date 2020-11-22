@@ -1,4 +1,4 @@
-package registers
+package Registersisters
 
 const (
   R0 = iota
@@ -20,28 +20,28 @@ const (
   NEG = 1 << 2
 )
 
-type Reg struct {
+type Registers struct {
   layout [COUNT]uint16
 }
 
-func New () *Reg {
-  return &Reg{}
+func New () *Registers {
+  return &Registers{}
 }
 
-func (r *Reg) Read (addr uint16) uint16 {
+func (r *Registers) Read (addr uint16) uint16 {
   return r.layout[addr]
 }
 
-func (r *Reg) Write (addr uint16, val uint16) {
+func (r *Registers) Write (addr uint16, val uint16) {
   r.layout[addr] = val
 }
 
-func (r *Reg) Inc (addr uint16) uint16 {
+func (r *Registers) Inc (addr uint16) uint16 {
   r.layout[addr] += 1
   return r.layout[addr]
 }
 
-func (r *Reg) UpdateFlags (addr uint16) {
+func (r *Registers) UpdateFlags (addr uint16) {
   val := r.Read(addr)
   var flag uint16
 
