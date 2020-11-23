@@ -20,7 +20,7 @@ func main () {
     panic(err)
   }
 
-  fmt.Println("Exit code:", r.Run())
+  fmt.Println("\nHalt. Code:", r.Run())
 }
 
 

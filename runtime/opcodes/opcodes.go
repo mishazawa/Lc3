@@ -1,8 +1,6 @@
 package opcodes
 
 import (
-  "fmt"
-
   r    "github.com/mishazawa/Lc3/runtime/types"
   reg  "github.com/mishazawa/Lc3/runtime/registers"
   trap "github.com/mishazawa/Lc3/runtime/routines"
@@ -221,19 +219,18 @@ func Trap (rt r.Runtime) {
   instruction := rt.ReadInstruction()
   switch instruction & 0xff {
   case trap.GETC:
-    fmt.Printf("Getc\n")
+    rt.WriteRegister(reg.R0, trap.Getc())
   case trap.OUT:
-    fmt.Printf("Out\n")
+    trap.Out(rt.ReadRegister(reg.R0))
   case trap.PUTS:
-    fmt.Printf("PUTs\n")
     pointer := rt.ReadRegister(reg.R0)
     trap.Puts(pointer, rt.ReadMemory)
   case trap.IN:
-    fmt.Printf("In\n")
+    rt.WriteRegister(reg.R0, trap.Getc())
   case trap.PUTSP:
-    fmt.Printf("Putsp\n")
+    pointer := rt.ReadRegister(reg.R0)
+    trap.Puts(pointer, rt.ReadMemory)
   case trap.HALT:
-    fmt.Printf("Halt\n")
     rt.Stop(0)
   }
 }

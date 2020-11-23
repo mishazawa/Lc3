@@ -2,6 +2,10 @@ package routines
 
 import (
 	"fmt"
+  "os"
+  "encoding/binary"
+
+  // utils "github.com/mishazawa/Lc3/runtime/utils"
 )
 
 const (
@@ -16,10 +20,32 @@ const (
 func Puts (pointer uint16, memoryRead func(uint16) uint16) {
   for {
     val := memoryRead(pointer)
-    fmt.Printf("%c", val)
+    Out(val)
     if val == 0 {
       break
     }
     pointer += 1
   }
+}
+
+func Putsp (pointer uint16, memoryRead func(uint16) uint16) {
+  for {
+    val := memoryRead(pointer)
+    Out(val & 0xff)
+    Out((val >> 8) & 0xff)
+    if val == 0 {
+      break
+    }
+    pointer += 1
+  }
+}
+
+func Getc () uint16 {
+  char := make([]byte, 1)
+  os.Stdin.Read(char)
+  return binary.BigEndian.Uint16(char)
+}
+
+func Out (val uint16) {
+  fmt.Printf("%c", val & 0xff)
 }

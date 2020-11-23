@@ -10,6 +10,8 @@ import (
   m "github.com/mishazawa/Lc3/runtime/memory"
 
   op "github.com/mishazawa/Lc3/runtime/opcodes"
+
+  utils "github.com/mishazawa/Lc3/runtime/utils"
 )
 
 type runtime struct {
@@ -21,6 +23,7 @@ type runtime struct {
 }
 
 func Boot () *runtime {
+  utils.InitKeyboard()
   return &runtime { m.New(), r.New(), false, 0, 0 }
 }
 
@@ -64,6 +67,7 @@ func (runtime *runtime) Load (file *os.File) error {
 }
 
 func (runtime *runtime) Run () int {
+  defer utils.CloseKeyboard()
   runtime.running = true
   /*
     1. Load one instruction from memory at the address of the PC register.
