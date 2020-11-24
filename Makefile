@@ -8,4 +8,4 @@ run:
 	go run .
 
 exec:
-	go run . -exec=data/hello_world.obj
+	go run . -exec=data/2048.obj

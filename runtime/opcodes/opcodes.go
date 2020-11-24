@@ -96,7 +96,7 @@ func Branch (rt r.Runtime) {
   instruction := rt.ReadInstruction()
 
   nzp := (instruction >> 9) & 0x7
-  if (nzp & 0x4) == 1 || (nzp & 0x2) == 1 || (nzp & 0x1) == 1 {
+  if (nzp & rt.ReadRegister(reg.COND)) == 1 {
     offset := sign_extend(instruction & 0x1ff, 9)
     rt.WriteRegister(reg.PC, rt.ReadRegister(reg.PC) + offset)
   }
@@ -117,16 +117,16 @@ func JumpRegister (rt r.Runtime) {
 
   rt.WriteRegister(reg.R7, rt.ReadRegister(reg.PC))
 
-  mode := (instruction >> 11) & 1
-
-  if mode == 0 {
-    value := (instruction >> 6) & 0x7
-    rt.WriteRegister(reg.PC, value)
-  } else {
+  switch (instruction >> 11) & 1 {
+  // JSR
+  case 1:
     offset := sign_extend(instruction & 0x7ff, 11)
     rt.WriteRegister(reg.PC, rt.ReadRegister(reg.PC) + offset)
+  // JSRR
+  case 0:
+    addr := (instruction >> 6) & 0x7
+    rt.WriteRegister(reg.PC, rt.ReadRegister(addr))
   }
-
 }
 
 func Load (rt r.Runtime) {
@@ -166,9 +166,9 @@ func LoadRegister (rt r.Runtime) {
 
   destination := (instruction >> 9) & 0x7
   base        := (instruction >> 6) & 0x7
-  offset      := sign_extend(instruction & 0x2f, 6)
+  offset      := sign_extend(instruction & 0x3f, 6)
 
-  rt.WriteRegister(destination, rt.ReadMemory(base + offset))
+  rt.WriteRegister(destination, rt.ReadMemory(rt.ReadRegister(base) + offset))
   rt.UpdateRegisterFlags(destination)
 }
 
@@ -213,8 +213,9 @@ func StoreRegister (rt r.Runtime) {
 
   source := (instruction >> 9) & 0x7
   base   := (instruction >> 6) & 0x7
-  offset := sign_extend(instruction & 0x2f, 6)
-  rt.WriteMemory(rt.ReadMemory(rt.ReadRegister(base) + offset),  rt.ReadRegister(source))
+  offset := sign_extend(instruction & 0x3f, 6)
+
+  rt.WriteMemory(rt.ReadRegister(base) + offset,  rt.ReadRegister(source))
 }
 
 func Trap (rt r.Runtime) {

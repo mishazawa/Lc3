@@ -7,7 +7,7 @@ import (
 	"github.com/eiannone/keyboard"
 )
 
-const shortDuration = 0 * time.Millisecond
+const shortDuration = 2000 * time.Millisecond
 
 func InitKeyboard () {
 	if err := keyboard.Open(); err != nil {
@@ -27,24 +27,27 @@ func IsEsc (c rune, key keyboard.Key, err error) bool {
 	return key == keyboard.KeyEsc
 }
 
-func Keypress () bool {
+func Keypress () uint16 {
 	d := time.Now().Add(shortDuration)
 	ctx, cancel := context.WithDeadline(context.Background(), d)
 
 	defer cancel()
 
 	select {
-	case <-getCharChan():
-		return true
+	case v := <-getCharChan():
+		return uint16(v)
 	case <-ctx.Done():
-		return false
+		return 0
 	}
 }
 
 func getCharChan () chan rune {
 	chanrune := make(chan rune)
   go func() {
-  	r, _, _ := GetChar()
+  	r, k, err := GetChar()
+  	if IsEsc(r, k, err) {
+  		panic("Esc")
+  	}
     chanrune <- r
   }()
   return chanrune

@@ -80,12 +80,12 @@ func (runtime *runtime) Run () int {
     if (!runtime.running) { break }
 
     runtime.instruction = runtime.memory.Read(runtime.registers.Read(r.PC))
-    runtime.registers.Inc(r.PC)
-    fmt.Printf("\nx%04X \n", runtime.instruction)
 
-    if utils.IsEsc(utils.GetChar()) {
-      break
-    }
+    // fmt.Printf("\nx%04X => x%04X\n", runtime.registers.Read(r.PC), runtime.instruction)
+
+    // if utils.IsEsc(utils.GetChar()) {
+    //   break
+    // }
 
     switch runtime.instruction >> 12 {
     case op.LD:
@@ -119,6 +119,8 @@ func (runtime *runtime) Run () int {
     default:
       panic(fmt.Sprintf("%016b not implemented.\n", runtime.instruction))
     }
+
+    runtime.registers.Inc(r.PC)
   }
   return 0
 }
