@@ -2,10 +2,7 @@ package routines
 
 import (
 	"fmt"
-  "os"
-  "encoding/binary"
-
-  // utils "github.com/mishazawa/Lc3/runtime/utils"
+  utils "github.com/mishazawa/Lc3/runtime/utils"
 )
 
 const (
@@ -41,9 +38,8 @@ func Putsp (pointer uint16, memoryRead func(uint16) uint16) {
 }
 
 func Getc () uint16 {
-  char := make([]byte, 1)
-  os.Stdin.Read(char)
-  return binary.BigEndian.Uint16(char)
+  rune, _, _ := utils.GetChar()
+  return uint16(rune)
 }
 
 func Out (val uint16) {

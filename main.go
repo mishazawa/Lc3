@@ -23,12 +23,10 @@ func main () {
   fmt.Println("\nHalt. Code:", r.Run())
 }
 
-
 var HELP_MESSAGE string = `
   help                     - print this message
   load "... path to image" - load assembler image
 `
-
 
 func load (r types.Runtime) error {
   var err error

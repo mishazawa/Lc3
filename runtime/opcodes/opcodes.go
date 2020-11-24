@@ -115,9 +115,11 @@ func Jump (rt r.Runtime) {
 func JumpRegister (rt r.Runtime) {
   instruction := rt.ReadInstruction()
 
+  rt.WriteRegister(reg.R7, rt.ReadRegister(reg.PC))
+
   mode := (instruction >> 11) & 1
 
-  if mode == 1 {
+  if mode == 0 {
     value := (instruction >> 6) & 0x7
     rt.WriteRegister(reg.PC, value)
   } else {
@@ -226,7 +228,9 @@ func Trap (rt r.Runtime) {
     pointer := rt.ReadRegister(reg.R0)
     trap.Puts(pointer, rt.ReadMemory)
   case trap.IN:
-    rt.WriteRegister(reg.R0, trap.Getc())
+    char := trap.Getc()
+    rt.WriteRegister(reg.R0, char)
+    trap.Out(char)
   case trap.PUTSP:
     pointer := rt.ReadRegister(reg.R0)
     trap.Puts(pointer, rt.ReadMemory)
