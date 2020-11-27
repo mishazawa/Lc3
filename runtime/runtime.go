@@ -20,12 +20,11 @@ type runtime struct {
 	running     bool
 	instruction uint16
 	code        int
-	ioBuffer    uint16
 }
 
 func Boot() *runtime {
 	utils.InitKeyboard()
-	return &runtime{m.New(), r.New(), false, 0, 0, 0}
+	return &runtime{m.New(), r.New(), false, 0, 0}
 }
 
 func (runtime *runtime) Load(file *os.File) error {
