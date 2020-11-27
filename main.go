@@ -8,7 +8,7 @@ import (
 	"regexp"
 
 	runtime "github.com/mishazawa/Lc3/runtime"
-	types "github.com/mishazawa/Lc3/runtime/types"
+	types "github.com/mishazawa/Lc3/runtime/opcodes"
 )
 
 func main() {

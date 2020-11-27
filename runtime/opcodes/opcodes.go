@@ -1,9 +1,10 @@
 package opcodes
 
 import (
+	"os"
+
 	reg "github.com/mishazawa/Lc3/runtime/registers"
 	trap "github.com/mishazawa/Lc3/runtime/routines"
-	r "github.com/mishazawa/Lc3/runtime/types"
 )
 
 const (
@@ -25,6 +26,21 @@ const (
 	TRAP        /* execute trap */
 )
 
+type Runtime interface {
+	ReadMemory(uint16) uint16
+	ReadRegister(uint16) uint16
+
+	WriteMemory(uint16, uint16)
+	WriteRegister(uint16, uint16)
+
+	UpdateRegisterFlags(uint16)
+	ReadInstruction() uint16
+
+	Load(*os.File) error
+	Run() int
+	Stop(int)
+}
+
 func sign_extend(x uint16, bits int) uint16 {
 	// check is 1 in MSB
 	if x>>(bits-1)&1 == 1 {
@@ -44,7 +60,7 @@ func sign_extend(x uint16, bits int) uint16 {
 
   ADD R0 R0 1 ; add 1 to R0 and store back in R0
 */
-func Add(rt r.Runtime) {
+func Add(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	destination := (instruction >> 9) & 0x7
@@ -67,7 +83,7 @@ func Add(rt r.Runtime) {
 /*
   Bitwise AND (register or immediate).
 */
-func And(rt r.Runtime) {
+func And(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	destination := (instruction >> 9) & 0x7
@@ -92,7 +108,7 @@ func And(rt r.Runtime) {
   if neg | zero | positive then
     PC += instruction[0:8]
 */
-func Branch(rt r.Runtime) {
+func Branch(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	nzp := (instruction >> 9) & 0x7
@@ -108,12 +124,12 @@ func Branch(rt r.Runtime) {
 
   PC <- instruction[9:11]
 */
-func Jump(rt r.Runtime) {
+func Jump(rt Runtime) {
 	instruction := rt.ReadInstruction()
 	rt.WriteRegister(reg.PC, rt.ReadRegister((instruction>>6)&0x7))
 }
 
-func JumpRegister(rt r.Runtime) {
+func JumpRegister(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	rt.WriteRegister(reg.R7, rt.ReadRegister(reg.PC))
@@ -130,7 +146,7 @@ func JumpRegister(rt r.Runtime) {
 	}
 }
 
-func Load(rt r.Runtime) {
+func Load(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	destination := (instruction >> 9) & 0x7
@@ -141,10 +157,10 @@ func Load(rt r.Runtime) {
 }
 
 /*
-  Load value from memory to register. Decode memory address that
+  Load value from memory to registe Decode memory address that
   store memory address to actual value.
 */
-func LoadIndirect(rt r.Runtime) {
+func LoadIndirect(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	destination := (instruction >> 9) & 0x7
@@ -162,7 +178,7 @@ func LoadIndirect(rt r.Runtime) {
 	rt.UpdateRegisterFlags(destination)
 }
 
-func LoadRegister(rt r.Runtime) {
+func LoadRegister(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	destination := (instruction >> 9) & 0x7
@@ -173,7 +189,7 @@ func LoadRegister(rt r.Runtime) {
 	rt.UpdateRegisterFlags(destination)
 }
 
-func LoadEffectiveAddress(rt r.Runtime) {
+func LoadEffectiveAddress(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	destination := (instruction >> 9) & 0x7
@@ -183,7 +199,7 @@ func LoadEffectiveAddress(rt r.Runtime) {
 	rt.UpdateRegisterFlags(destination)
 }
 
-func Not(rt r.Runtime) {
+func Not(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	destination := (instruction >> 9) & 0x7
@@ -193,7 +209,7 @@ func Not(rt r.Runtime) {
 	rt.UpdateRegisterFlags(destination)
 }
 
-func Store(rt r.Runtime) {
+func Store(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	source := (instruction >> 9) & 0x7
@@ -201,7 +217,7 @@ func Store(rt r.Runtime) {
 	rt.WriteMemory(rt.ReadRegister(reg.PC)+offset, rt.ReadRegister(source))
 }
 
-func StoreIndirect(rt r.Runtime) {
+func StoreIndirect(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	source := (instruction >> 9) & 0x7
@@ -209,7 +225,7 @@ func StoreIndirect(rt r.Runtime) {
 	rt.WriteMemory(rt.ReadMemory(rt.ReadRegister(reg.PC)+offset), rt.ReadRegister(source))
 }
 
-func StoreRegister(rt r.Runtime) {
+func StoreRegister(rt Runtime) {
 	instruction := rt.ReadInstruction()
 
 	source := (instruction >> 9) & 0x7
@@ -219,7 +235,7 @@ func StoreRegister(rt r.Runtime) {
 	rt.WriteMemory(rt.ReadRegister(base)+offset, rt.ReadRegister(source))
 }
 
-func Trap(rt r.Runtime) {
+func Trap(rt Runtime) {
 	instruction := rt.ReadInstruction()
 	switch instruction & 0xff {
 	case trap.GETC:
