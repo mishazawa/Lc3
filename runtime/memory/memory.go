@@ -21,12 +21,16 @@ func New () *Memory {
 
 func (m *Memory) Read (addr uint16) uint16 {
 	if addr == KBSR {
-		if c := utils.Keypress(); c != 0 {
-			m.Write(KBSR, 1 << 15)
-			m.Write(KBDR, c & 0x0f)
+		kbsr  := m.layout[KBSR]
+		ready := (kbsr & 0x8000) == 0;
+
+    button := utils.GetChar()
+
+		if ready && button != 0 {
+			m.Write(KBSR, kbsr   | 0x8000)
+			m.Write(KBDR, button & 0x00ff)
 		} else {
-			m.Write(KBSR, 0x00)
-			m.Write(KBDR, 0x00)
+			m.Write(KBSR, 0x0)
 		}
 	}
 	return m.layout[addr]

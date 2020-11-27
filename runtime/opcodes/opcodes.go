@@ -96,7 +96,8 @@ func Branch (rt r.Runtime) {
   instruction := rt.ReadInstruction()
 
   nzp := (instruction >> 9) & 0x7
-  if (nzp & rt.ReadRegister(reg.COND)) == 1 {
+
+  if (nzp & rt.ReadRegister(reg.COND)) != 0 {
     offset := sign_extend(instruction & 0x1ff, 9)
     rt.WriteRegister(reg.PC, rt.ReadRegister(reg.PC) + offset)
   }

@@ -20,11 +20,12 @@ type runtime struct {
   running     bool
   instruction uint16
   code        int
+  ioBuffer    uint16
 }
 
 func Boot () *runtime {
   utils.InitKeyboard()
-  return &runtime { m.New(), r.New(), false, 0, 0 }
+  return &runtime { m.New(), r.New(), false, 0, 0, 0 }
 }
 
 func (runtime *runtime) Load (file *os.File) error {
@@ -66,8 +67,10 @@ func (runtime *runtime) Load (file *os.File) error {
   return nil
 }
 
+
 func (runtime *runtime) Run () int {
   defer utils.CloseKeyboard()
+
   runtime.running = true
   /*
     1. Load one instruction from memory at the address of the PC register.
@@ -79,13 +82,11 @@ func (runtime *runtime) Run () int {
   for {
     if (!runtime.running) { break }
 
-    runtime.instruction = runtime.memory.Read(runtime.registers.Read(r.PC))
+    /* Program counter should contain address of NEXT instruction */
+    runtime.registers.Inc(r.PC)
 
-    // fmt.Printf("\nx%04X => x%04X\n", runtime.registers.Read(r.PC), runtime.instruction)
-
-    // if utils.IsEsc(utils.GetChar()) {
-    //   break
-    // }
+    /* Decrement PC to execute CURRENT instruction */
+    runtime.instruction = runtime.memory.Read(runtime.registers.Read(r.PC) - 1)
 
     switch runtime.instruction >> 12 {
     case op.LD:
@@ -120,7 +121,6 @@ func (runtime *runtime) Run () int {
       panic(fmt.Sprintf("%016b not implemented.\n", runtime.instruction))
     }
 
-    runtime.registers.Inc(r.PC)
   }
   return 0
 }

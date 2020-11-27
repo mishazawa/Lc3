@@ -38,11 +38,7 @@ func Putsp (pointer uint16, memoryRead func(uint16) uint16) {
 }
 
 func Getc () uint16 {
-  rune, _, _ := utils.GetChar()
-  fmt.Println("Getc", uint16(rune))
-  panic("asd")
-  return uint16(rune)
-
+  return utils.GetChar()
 }
 
 func Out (val uint16) {

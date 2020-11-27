@@ -1,4 +1,4 @@
-package Registersisters
+package registers
 
 const (
   R0 = iota
